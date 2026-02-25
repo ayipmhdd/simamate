@@ -55,8 +55,8 @@
                     <span x-show="isSidebarOpen" class="ms-3 whitespace-nowrap">Dashboard</span>
                 </a>
             </li>
-            <li>
-                <a href="{{ route('dompet') }}" :class="isSidebarOpen ? '' : 'justify-center'" @class([
+            {{-- <li>
+                <a href="{{ route('dompet.index') }}" :class="isSidebarOpen ? '' : 'justify-center'" @class([
                     'flex items-center px-2 py-1.5 rounded-lg group border relative',
                     'border-blue-600 bg-blue-50 text-blue-600 dark:border-blue-500 dark:bg-blue-900/20 dark:text-blue-400' => request()->routeIs(
                         'dompet'),
@@ -75,6 +75,68 @@
                     </svg>
                     <span x-show="isSidebarOpen" class="flex-1 ms-3 whitespace-nowrap">Dompet</span>
                 </a>
+            </li> --}}
+            <li x-data="{ isDompetOpen: {{ request()->routeIs('dompet.*') ? 'true' : 'false' }} }" x-effect="if (!isSidebarOpen) { isDompetOpen = false; }">
+                <button type="button"
+                    @click="if(isSidebarOpen) { isDompetOpen = !isDompetOpen; } else { isSidebarOpen = true; isDompetOpen = true; }"
+                    @class([
+                        'flex items-center w-full justify-between px-2 py-1.5 rounded-lg group border relative transition-colors',
+                        'border-blue-600 bg-blue-50 text-blue-600 dark:border-blue-500 dark:bg-blue-900/20 dark:text-blue-400' => request()->routeIs(
+                            'dompet.*'),
+                        'border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white' => !request()->routeIs(
+                            'dompet.*'),
+                    ])>
+                    <div class="flex items-center" :class="isSidebarOpen ? '' : 'w-full justify-center'">
+                        <svg @class([
+                            'shrink-0 w-5 h-5 transition duration-75',
+                            'text-blue-600 dark:text-blue-400' => request()->routeIs('dompet.*'),
+                            'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white' => !request()->routeIs(
+                                'dompet.*'),
+                        ]) aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
+                            width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h18M6 14h2m3 0h5M3 7v10a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1Z" />
+                        </svg>
+                        <span x-show="isSidebarOpen"
+                            class="flex-1 ms-3 text-left rtl:text-right whitespace-nowrap">Dompet</span>
+                    </div>
+                    <svg x-show="isSidebarOpen" :class="{ 'rotate-180': isDompetOpen }"
+                        class="w-5 h-5 transition-transform duration-200" aria-hidden="true"
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+                        viewBox="0 0 24 24">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="m19 9-7 7-7-7" />
+                    </svg>
+                </button>
+                <ul x-show="isDompetOpen && isSidebarOpen" x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 -translate-y-2"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 translate-y-0"
+                    x-transition:leave-end="opacity-0 -translate-y-2" class="py-2 space-y-1">
+                    <li>
+                        <a href="{{ route('dompet.index') }}" @class([
+                            'pl-11 flex items-center px-2 py-1.5 text-sm rounded-lg transition-colors group',
+                            'text-blue-600 dark:text-blue-400 font-medium' => request()->routeIs(
+                                'dompet.index'),
+                            'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700' => !request()->routeIs(
+                                'dompet.index'),
+                        ])>Keuangan</a>
+                    </li>
+                    <li>
+                        <a href="#"
+                            class="pl-11 flex items-center px-2 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors group">Tabungan</a>
+                    </li>
+                    <li>
+                        <a href="{{ route('dompet.riwayat') }}" @class([
+                            'pl-11 flex items-center px-2 py-1.5 text-sm rounded-lg transition-colors group',
+                            'text-blue-600 dark:text-blue-400 font-medium' => request()->routeIs(
+                                'dompet.riwayat'),
+                            'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700' => !request()->routeIs(
+                                'dompet.riwayat'),
+                        ])>Riwayat</a>
+                    </li>
+                </ul>
             </li>
             <li>
                 <a href="#" :class="isSidebarOpen ? '' : 'justify-center'" @class([

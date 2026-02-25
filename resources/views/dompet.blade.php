@@ -3,7 +3,31 @@
         {{ __('Dompet') }}
     </x-slot>
 
-    <div class="py-6 sm:py-12">
+    <div x-data="{
+        showModal: false,
+        transactionType: 'pemasukan',
+        amountFormatted: '',
+        amount: '',
+        category: '',
+        accountType: '',
+        openModal(type) {
+            this.transactionType = type;
+            this.showModal = true;
+            this.amountFormatted = '';
+            this.amount = '';
+            this.category = '';
+            this.accountType = '';
+        },
+        formatRupiah(e) {
+            let val = e.target.value.replace(/[^0-9]/g, '');
+            this.amount = val;
+            if (val) {
+                this.amountFormatted = 'Rp ' + parseInt(val, 10).toLocaleString('id-ID');
+            } else {
+                this.amountFormatted = '';
+            }
+        }
+    }" class="py-6 sm:py-12 relative">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             <!-- Ringkasan Saldo (Top Section) -->
@@ -28,25 +52,26 @@
                                 </svg>
                                 Total Saldo
                             </p>
-                            <h1 class="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Rp 24.500.000</h1>
+                            <h1 class="text-4xl md:text-5xl font-bold mb-6 tracking-tight">Rp
+                                {{ number_format($totalSaldo, 0, ',', '.') }}</h1>
                         </div>
 
                         <div class="flex flex-wrap gap-4 mt-4">
-                            <button
+                            <button @click="openModal('pemasukan')"
                                 class="bg-white text-blue-700 hover:bg-gray-50 focus:ring-4 focus:ring-white/50 font-semibold py-2.5 px-6 rounded-xl transition duration-200 shadow-sm flex items-center gap-2">
                                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 4v16m8-8H4"></path>
                                 </svg>
-                                Top Up
+                                Tambah Pemasukan
                             </button>
-                            <button
+                            <button @click="openModal('pengeluaran')"
                                 class="bg-blue-800/40 hover:bg-blue-800/60 backdrop-blur-sm border border-blue-400/30 text-white font-semibold py-2.5 px-6 rounded-xl transition duration-200 focus:ring-4 focus:ring-blue-500/50 flex items-center gap-2">
                                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
                                 </svg>
-                                Tarik Saldo
+                                Catat Pengeluaran
                             </button>
                         </div>
                     </div>
@@ -66,7 +91,8 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Pemasukan</p>
-                            <h4 class="text-xl font-bold text-gray-900 dark:text-white">Rp 8.200.000</h4>
+                            <h4 class="text-xl font-bold text-gray-900 dark:text-white">Rp
+                                {{ number_format($pemasukan, 0, ',', '.') }}</h4>
                         </div>
                     </div>
 
@@ -83,25 +109,26 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Pengeluaran</p>
-                            <h4 class="text-xl font-bold text-gray-900 dark:text-white">Rp 3.150.000</h4>
+                            <h4 class="text-xl font-bold text-gray-900 dark:text-white">Rp
+                                {{ number_format($pengeluaran, 0, ',', '.') }}</h4>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Daftar Kartu (Middle Section - Horizontal Scroll Carousel) -->
+            <!-- Sisa Saldo Per Akun (Middle Section - Horizontal Scroll Carousel) -->
             <div
                 class="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 overflow-hidden">
                 <div class="flex justify-between items-end mb-6">
                     <div>
-                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Kartu Anda</h3>
-                        <p class="text-sm text-gray-500 dark:text-gray-400">Kelola kartu debit/kredit virtual & fisik
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Sisa Saldo Per Akun</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Rincian dana di setiap dompet & rekening
+                            bank Anda
                         </p>
                     </div>
-                    <button class="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline">Tambah</button>
                 </div>
 
-                <!-- Horizontal Scroll Container -->
+                <!-- Horizontal Scroll Container for Accounts -->
                 <div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory hide-scroll">
                     <!-- Set manual style for hiding scrollbar as fallback -->
                     <style>
@@ -115,97 +142,89 @@
                         }
                     </style>
 
-                    <!-- Kartu 1: Dark Mode / VISA -->
+                    <!-- Total Saldo Card (Card Utama) -->
                     <div
-                        class="min-w-[300px] sm:min-w-[340px] h-48 bg-gradient-to-tr from-gray-900 to-gray-700 rounded-2xl p-6 text-white relative flex flex-col justify-between shadow-md snap-center shrink-0 overflow-hidden group hover:-translate-y-1 transition duration-300">
+                        class="min-w-[240px] bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-5 text-white relative flex flex-col justify-between shadow-sm snap-center shrink-0 border border-blue-400/30 overflow-hidden group">
                         <div
-                            class="absolute inset-0 bg-white opacity-[0.02] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none">
+                            class="absolute -right-6 -top-6 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:bg-white/20 transition duration-500">
                         </div>
-                        <div
-                            class="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition duration-500">
-                        </div>
-
-                        <div class="flex justify-between items-start z-10">
-                            <!-- SVG Chip -->
-                            <svg class="w-10 h-8 text-yellow-500/90 drop-shadow-sm" viewBox="0 0 48 36"
-                                fill="currentColor">
-                                <path
-                                    d="M40 0H8C3.6 0 0 3.6 0 8v20c0 4.4 3.6 8 8 8h32c4.4 0 8-3.6 8-8V8c0-4.4-3.6-8-8-8zm4 28c0 2.2-1.8 4-4 4H8c-2.2 0-4-1.8-4-4V8c0-2.2 1.8-4 4-4h32c2.2 0 4 1.8 4 4v20z" />
-                                <path
-                                    d="M12 10a2 2 0 100 4 2 2 0 000-4zm0 12a2 2 0 100 4 2 2 0 000-4zm24-12a2 2 0 100 4 2 2 0 000-4zm0 12a2 2 0 100 4 2 2 0 000-4z" />
-                            </svg>
-                            <span class="font-bold italic text-xl tracking-wider text-gray-200">VISA</span>
+                        <div class="flex justify-between items-start z-10 mb-4">
+                            <div
+                                class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 10h18M6 14h2m3 0h5M3 7v10a1 1 0 001 1h16a1 1 0 001-1V7a1 1 0 00-1-1H4a1 1 0 00-1 1z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <span
+                                class="text-sm font-medium text-blue-100 bg-white/10 px-2 py-1 rounded-lg backdrop-blur-sm">Total
+                                Keseluruhan</span>
                         </div>
                         <div class="z-10 mt-auto">
-                            <p class="font-mono text-lg tracking-widest mb-2 text-gray-200">**** **** **** 4829</p>
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-0.5">Pemegang Kartu
-                                    </p>
-                                    <p class="font-medium text-sm tracking-wide">{{ Auth::user()->name }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-[10px] text-gray-400 uppercase tracking-widest mb-0.5">Valid</p>
-                                    <p class="font-medium text-sm">12/28</p>
-                                </div>
-                            </div>
+                            <p class="text-xs text-blue-200 uppercase tracking-widest mb-1">Gabungan Saldo</p>
+                            <h4 class="text-2xl font-bold tracking-tight">Rp
+                                {{ number_format($accounts->sum('balance'), 0, ',', '.') }}</h4>
                         </div>
                     </div>
 
-                    <!-- Kartu 2: Mastercard / Emerald -->
-                    <div
-                        class="min-w-[300px] sm:min-w-[340px] h-48 bg-gradient-to-br from-emerald-500 to-teal-700 dark:from-emerald-600 dark:to-teal-800 rounded-2xl p-6 text-white relative flex flex-col justify-between shadow-md snap-center shrink-0 overflow-hidden group hover:-translate-y-1 transition duration-300">
-                        <div
-                            class="absolute -right-20 -bottom-20 w-48 h-48 bg-emerald-300/20 rounded-full blur-3xl group-hover:bg-emerald-300/30 transition duration-500">
-                        </div>
+                    <!-- Looping for Each Account -->
+                    @foreach ($accounts as $acc)
+                        @php
+                            $accName = strtolower($acc->account_name);
+                            $bgClass = 'bg-white dark:bg-gray-800';
+                            $iconBg = 'bg-gray-100 dark:bg-gray-700';
+                            $iconColor = 'text-gray-600 dark:text-gray-300';
+                            $iconSvg = '';
 
-                        <div class="flex justify-between items-start z-10">
-                            <svg class="w-10 h-8 text-yellow-300/90 drop-shadow-sm" viewBox="0 0 48 36"
-                                fill="currentColor">
-                                <path
-                                    d="M40 0H8C3.6 0 0 3.6 0 8v20c0 4.4 3.6 8 8 8h32c4.4 0 8-3.6 8-8V8c0-4.4-3.6-8-8-8zm4 28c0 2.2-1.8 4-4 4H8c-2.2 0-4-1.8-4-4V8c0-2.2 1.8-4 4-4h32c2.2 0 4 1.8 4 4v20z" />
-                                <path
-                                    d="M12 10a2 2 0 100 4 2 2 0 000-4zm0 12a2 2 0 100 4 2 2 0 000-4zm24-12a2 2 0 100 4 2 2 0 000-4zm0 12a2 2 0 100 4 2 2 0 000-4z" />
-                            </svg>
-                            <!-- Fake Mastercard Logo -->
-                            <div class="flex items-center -space-x-4">
+                            if ($accName == 'cash' || $accName == 'tunai') {
+                                $iconBg = 'bg-emerald-100 dark:bg-emerald-900/40';
+                                $iconColor = 'text-emerald-600 dark:text-emerald-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>';
+                            } elseif (str_contains($accName, 'dana')) {
+                                $iconBg = 'bg-blue-100 dark:bg-blue-900/40';
+                                $iconColor = 'text-blue-500 dark:text-blue-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>';
+                            } elseif (str_contains($accName, 'seabank')) {
+                                $iconBg = 'bg-orange-100 dark:bg-orange-900/40';
+                                $iconColor = 'text-orange-500 dark:text-orange-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                            } elseif (str_contains($accName, 'gopay')) {
+                                $iconBg = 'bg-sky-100 dark:bg-sky-900/40';
+                                $iconColor = 'text-sky-500 dark:text-sky-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>';
+                            } else {
+                                $iconBg = 'bg-gray-100 dark:bg-gray-700';
+                                $iconColor = 'text-gray-600 dark:text-gray-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>';
+                            }
+                        @endphp
+                        <div
+                            class="min-w-[220px] {{ $bgClass }} border border-gray-200 dark:border-gray-700 rounded-2xl p-5 relative flex flex-col justify-between shadow-sm snap-center shrink-0 hover:-translate-y-1 transition duration-300 group">
+                            <div class="flex justify-between items-start mb-4">
                                 <div
-                                    class="w-8 h-8 rounded-full bg-red-500/80 mix-blend-multiply border-2 border-transparent">
+                                    class="w-10 h-10 rounded-xl {{ $iconBg }} {{ $iconColor }} flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        {!! $iconSvg !!}
+                                    </svg>
                                 </div>
-                                <div
-                                    class="w-8 h-8 rounded-full bg-yellow-500/80 mix-blend-multiply border-2 border-transparent">
-                                </div>
+                                <span
+                                    class="bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-semibold px-2.5 py-1 rounded-lg">{{ $acc->account_name }}</span>
+                            </div>
+                            <div class="mt-auto">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Saldo
+                                </p>
+                                <h4 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">Rp
+                                    {{ number_format($acc->balance, 0, ',', '.') }}</h4>
                             </div>
                         </div>
-                        <div class="z-10 mt-auto">
-                            <p class="font-mono text-lg tracking-widest mb-2 text-teal-50">**** **** **** 9104</p>
-                            <div class="flex justify-between items-end">
-                                <div>
-                                    <p class="text-[10px] text-teal-200/80 uppercase tracking-widest mb-0.5">Pemegang
-                                        Kartu</p>
-                                    <p class="font-medium text-sm tracking-wide">{{ Auth::user()->name }}</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-[10px] text-teal-200/80 uppercase tracking-widest mb-0.5">Valid</p>
-                                    <p class="font-medium text-sm">05/26</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tambah Kartu Baru Button -->
-                    <button
-                        class="min-w-[300px] sm:min-w-[340px] h-48 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-6 text-gray-500 dark:text-gray-400 hover:text-blue-600 hover:border-blue-500 dark:hover:text-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-gray-700/30 transition-all duration-300 flex flex-col justify-center items-center cursor-pointer snap-center shrink-0 group focus:outline-none focus:ring-4 focus:ring-blue-500/20">
-                        <div
-                            class="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 group-hover:bg-blue-100 dark:group-hover:bg-gray-600 flex items-center justify-center mb-3 transition-colors">
-                            <svg class="w-6 h-6 group-hover:scale-110 transition-transform" fill="none"
-                                stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4"></path>
-                            </svg>
-                        </div>
-                        <p class="font-medium">Tambah Kartu Baru</p>
-                    </button>
+                    @endforeach
                 </div>
             </div>
 
@@ -229,104 +248,255 @@
 
                 <!-- Transaction List -->
                 <div class="space-y-4">
+                    @forelse ($transactions as $transaction)
+                        @php
+                            $cat = strtolower($transaction->category);
+                            $iconBg = 'bg-gray-100 dark:bg-gray-900/30';
+                            $iconColor = 'text-gray-600 dark:text-gray-400';
+                            $iconSvg = '';
 
-                    <!-- Transaksi 1 (Keluar - Makanan) -->
-                    <div
-                        class="flex items-center justify-between p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 group">
-                        <div class="flex items-center gap-4">
-                            <div
-                                class="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 group-hover:scale-105 transition-transform">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
-                                    </path>
-                                </svg>
+                            if ($cat == 'gaji') {
+                                $iconBg = 'bg-green-100 dark:bg-green-900/30';
+                                $iconColor = 'text-green-600 dark:text-green-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>';
+                            } elseif ($cat == 'makan') {
+                                $iconBg = 'bg-orange-100 dark:bg-orange-900/30';
+                                $iconColor = 'text-orange-600 dark:text-orange-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>';
+                            } elseif ($cat == 'jajan') {
+                                $iconBg = 'bg-purple-100 dark:bg-purple-900/30';
+                                $iconColor = 'text-purple-600 dark:text-purple-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>';
+                            } elseif ($cat == 'tagihan') {
+                                $iconBg = 'bg-blue-100 dark:bg-blue-900/30';
+                                $iconColor = 'text-blue-600 dark:text-blue-400';
+                                $iconSvg =
+                                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>';
+                            } else {
+                                if ($transaction->type === 'pemasukan') {
+                                    $iconBg = 'bg-emerald-50 dark:bg-emerald-900/20';
+                                    $iconColor = 'text-emerald-500 dark:text-emerald-400';
+                                    $iconSvg =
+                                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>';
+                                } else {
+                                    $iconBg = 'bg-rose-50 dark:bg-rose-900/20';
+                                    $iconColor = 'text-rose-500 dark:text-rose-400';
+                                    $iconSvg =
+                                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 12H4"></path>';
+                                }
+                            }
+                        @endphp
+                        <div
+                            class="flex items-center justify-between p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 group">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-12 h-12 rounded-full {{ $iconBg }} {{ $iconColor }} flex items-center justify-center group-hover:scale-105 transition-transform">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        {!! $iconSvg !!}
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="text-sm md:text-base font-bold text-gray-900 dark:text-white">
+                                        {{ $transaction->category }}</h4>
+                                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                                        {{ Str::limit($transaction->description ?? ucfirst($transaction->type), 40) }}
+                                        <span class="mx-1">•</span>
+                                        {{ \Carbon\Carbon::parse($transaction->transaction_date)->format('d M Y') }}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 class="text-sm md:text-base font-bold text-gray-900 dark:text-white">Ayam Geprek
-                                    Mas Joss</h4>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Makanan & Minuman <span
-                                        class="mx-1">•</span> Hari ini, 12:30</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm md:text-base font-bold text-red-600 dark:text-red-400">- Rp 45.000</p>
-                        </div>
-                    </div>
-
-                    <!-- Transaksi 2 (Masuk - Transfer) -->
-                    <div
-                        class="flex items-center justify-between p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 group">
-                        <div class="flex items-center gap-4">
-                            <div
-                                class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 group-hover:scale-105 transition-transform">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                                    </path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4 class="text-sm md:text-base font-bold text-gray-900 dark:text-white">Transfer dari
-                                    Budi</h4>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Pendapatan <span
-                                        class="mx-1">•</span> Kemarin, 09:15</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm md:text-base font-bold text-green-600 dark:text-green-500">+ Rp 2.500.000
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Transaksi 3 (Keluar - Belanja) -->
-                    <div
-                        class="flex items-center justify-between p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 group">
-                        <div class="flex items-center gap-4">
-                            <div
-                                class="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400 group-hover:scale-105 transition-transform">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4 class="text-sm md:text-base font-bold text-gray-900 dark:text-white">Tokopedia</h4>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Belanja <span
-                                        class="mx-1">•</span> 23 Feb 2026, 14:20</p>
+                            <div class="text-right">
+                                @if ($transaction->type === 'pemasukan')
+                                    <p class="text-sm md:text-base font-bold text-green-600 dark:text-green-500">+ Rp
+                                        {{ number_format($transaction->amount, 0, ',', '.') }}</p>
+                                @else
+                                    <p class="text-sm md:text-base font-bold text-red-600 dark:text-red-400">- Rp
+                                        {{ number_format($transaction->amount, 0, ',', '.') }}</p>
+                                @endif
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="text-sm md:text-base font-bold text-red-600 dark:text-red-400">- Rp 340.000</p>
+                    @empty
+                        <div class="text-center py-10">
+                            <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                                </path>
+                            </svg>
+                            <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">Belum ada transaksi</p>
                         </div>
-                    </div>
-
-                    <!-- Transaksi 4 (Keluar - Langganan) -->
-                    <div
-                        class="flex items-center justify-between p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600 group">
-                        <div class="flex items-center gap-4">
-                            <div
-                                class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 group-hover:scale-105 transition-transform">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
-                                    </path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h4 class="text-sm md:text-base font-bold text-gray-900 dark:text-white">Netflix
-                                    Premium</h4>
-                                <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">Hiburan <span
-                                        class="mx-1">•</span> 21 Feb 2026, 08:00</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm md:text-base font-bold text-red-600 dark:text-red-400">- Rp 186.000</p>
-                        </div>
-                    </div>
+                    @endforelse
                 </div>
 
             </div>
         </div>
-    </div>
+
+        <!-- Add Transaction Modal -->
+        <div x-show="showModal" class="fixed inset-0 z-50 overflow-y-auto" style="display: none;"
+            aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div x-show="showModal" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                    x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed inset-0 bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-80 transition-opacity"
+                    @click="showModal = false" aria-hidden="true"></div>
+
+                <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <div x-show="showModal" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100 dark:border-gray-700">
+
+                    <form method="POST" action="{{ route('dompet.store') }}">
+                        @csrf
+                        <input type="hidden" name="type" x-model="transactionType">
+
+                        <div class="px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-5"
+                                id="modal-title"
+                                x-text="transactionType === 'pemasukan' ? 'Tambah Pemasukan' : 'Catat Pengeluaran'">
+                            </h3>
+
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="amount_display"
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Jumlah
+                                        (Rp)</label>
+                                    <input type="text" id="amount_display" required x-model="amountFormatted"
+                                        @input="formatRupiah" placeholder="Rp 0"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                    <input type="hidden" name="amount" x-model="amount">
+                                </div>
+
+                                <div>
+                                    <label for="category"
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Kategori</label>
+                                    <select name="category" id="category" x-model="category" required
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                        <option value="" disabled selected>Pilih Kategori</option>
+                                        <option x-show="transactionType === 'pemasukan'" value="Gaji">Gaji</option>
+                                        <option x-show="transactionType === 'pengeluaran'" value="Makan">Makan
+                                        </option>
+                                        <option x-show="transactionType === 'pengeluaran'" value="Jajan">Jajan
+                                        </option>
+                                        <option x-show="transactionType === 'pengeluaran'" value="Tagihan">Tagihan
+                                        </option>
+                                        <option value="Lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+
+                                <div x-show="category === 'Lainnya'" x-transition style="display: none;">
+                                    <label for="other_category"
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sebutkan
+                                        Kategori Lainnya</label>
+                                    <input type="text" name="other_category" id="other_category"
+                                        placeholder="Contoh: Bonus, Hadiah, dll"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                </div>
+
+                                <div>
+                                    <label for="account_type"
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sumber
+                                        Dana</label>
+                                    <select name="account_type" id="account_type" x-model="accountType" required
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                        <option value="" disabled selected>Pilih Sumber Dana</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Dana">Dana</option>
+                                        <option value="SeaBank">SeaBank</option>
+                                        <option value="GoPay">GoPay</option>
+                                        <option value="Lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+
+                                <div x-show="accountType === 'Lainnya'" x-transition style="display: none;">
+                                    <label for="other_account"
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sebutkan
+                                        Sumber Dana Lainnya</label>
+                                    <input type="text" name="other_account" id="other_account"
+                                        placeholder="Contoh: BCA, BNI, OVO, dll"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                </div>
+
+                                <div>
+                                    <label for="transaction_date"
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal</label>
+                                    <input type="date" name="transaction_date" id="transaction_date" required
+                                        value="{{ date('Y-m-d') }}"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                </div>
+
+                                <div>
+                                    <label for="description"
+                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Catatan
+                                        Singkat (Opsional)</label>
+                                    <textarea name="description" id="description" rows="3"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-2xl border-t border-gray-200 dark:border-gray-600">
+                            <button type="submit"
+                                :class="transactionType === 'pemasukan' ?
+                                    'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
+                                    'bg-red-600 hover:bg-red-700 focus:ring-red-500'"
+                                class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                                Simpan
+                            </button>
+                            <button type="button" @click="showModal = false"
+                                class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-800 text-base font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <!-- Toast Notification Flash Message -->
+            @if (session('success'))
+                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+                    x-transition:enter="transform ease-out duration-300 transition"
+                    x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+                    x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+                    x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100"
+                    x-transition:leave-end="opacity-0"
+                    class="fixed bottom-4 right-4 sm:right-6 sm:bottom-6 z-[100] max-w-sm w-full bg-white dark:bg-gray-800 shadow-2xl rounded-2xl border-l-4 border-green-500 overflow-hidden">
+                    <div class="p-4">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="ml-3 w-0 flex-1 pt-0.5">
+                                <p class="text-sm font-bold text-gray-900 dark:text-white">Berhasil!</p>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ session('success') }}</p>
+                            </div>
+                            <div class="ml-4 flex-shrink-0 flex">
+                                <button @click="show = false"
+                                    class="bg-white dark:bg-gray-800 rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                                    <span class="sr-only">Tutup</span>
+                                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+        </div>
 </x-app-layout>

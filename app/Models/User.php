@@ -45,4 +45,27 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class);
+    }
+
+    public function accounts()
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($user) {
+            $defaultAccounts = ['Cash', 'Dana', 'SeaBank', 'GoPay'];
+            foreach ($defaultAccounts as $account) {
+                $user->accounts()->create([
+                    'account_name' => $account,
+                    'balance' => 0,
+                ]);
+            }
+        });
+    }
 }
