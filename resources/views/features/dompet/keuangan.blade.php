@@ -10,6 +10,7 @@
         amount: '',
         category: '',
         accountType: '',
+        transactionTime: '',
         openModal(type) {
             this.transactionType = type;
             this.showModal = true;
@@ -17,6 +18,11 @@
             this.amount = '';
             this.category = '';
             this.accountType = '';
+            this.transactionTime = '';
+        },
+        setTimeNow() {
+            const now = new Date();
+            this.transactionTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         },
         formatRupiah(e) {
             let val = e.target.value.replace(/[^0-9]/g, '');
@@ -236,7 +242,7 @@
                         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Riwayat Transaksi</h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400">Daftar transaksi minggu ini</p>
                     </div>
-                    <button
+                    <button type="button" @click="window.location.href = '{{ route('dompet.riwayat') }}'"
                         class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline flex items-center gap-1 transition-colors">
                         Lihat Semua
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -304,7 +310,9 @@
                                     <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                                         {{ Str::limit($transaction->description ?? ucfirst($transaction->type), 40) }}
                                         <span class="mx-1">•</span>
-                                        {{ \Carbon\Carbon::parse($transaction->transaction_date)->format('d M Y') }}
+                                        {{ $transaction->transaction_date->format('d M Y') }}
+                                        <span class="mx-1">•</span>
+                                        {{ $transaction->transaction_date->format('H:i') }}
                                     </p>
                                 </div>
                             </div>
@@ -426,12 +434,34 @@
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
                                 </div>
 
-                                <div>
-                                    <label for="transaction_date"
-                                        class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal</label>
-                                    <input type="date" name="transaction_date" id="transaction_date" required
-                                        value="{{ date('Y-m-d') }}"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="transaction_date"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal</label>
+                                        <input type="date" name="transaction_date" id="transaction_date" required
+                                            value="{{ date('Y-m-d') }}"
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label for="transaction_time"
+                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Waktu
+                                            (Opsional)</label>
+                                        <div class="mt-1 flex rounded-md shadow-sm">
+                                            <input type="time" name="transaction_time" id="transaction_time"
+                                                x-model="transactionTime"
+                                                class="flex-1 min-w-0 block w-full rounded-none rounded-l-md border-gray-300 focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                            <button type="button" @click="setTimeNow()"
+                                                title="Gunakan waktu saat ini"
+                                                class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 dark:bg-gray-700 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-colors">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div>

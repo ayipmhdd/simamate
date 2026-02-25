@@ -14,27 +14,34 @@ class TransactionController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Get recent transactions
+        // Transaksi minggu ini untuk History Dashboard
         $transactions = Transaction::where('user_id', $user->id)
-            ->orderBy('transaction_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->take(10)
+            ->whereBetween('transaction_date', [now()->startOfWeek()->format('Y-m-d'), now()->endOfWeek()->format('Y-m-d')])
+            ->latest('transaction_date')
+            ->latest('id')
             ->get();
 
-        // Calculate totals
+        // Kalkulasi Pemasukan dan Pengeluaran BULAN INI
         $pemasukan = Transaction::where('user_id', $user->id)
             ->where('type', 'pemasukan')
+            ->whereMonth('transaction_date', now()->month)
+            ->whereYear('transaction_date', now()->year)
             ->sum('amount');
 
         $pengeluaran = Transaction::where('user_id', $user->id)
             ->where('type', 'pengeluaran')
+            ->whereMonth('transaction_date', now()->month)
+            ->whereYear('transaction_date', now()->year)
             ->sum('amount');
 
-        $totalSaldo = $pemasukan - $pengeluaran;
-
+        // Saldo Kumulatif dari seluruh Akun/Dompet
         $accounts = $user->accounts()->get();
+        $totalSaldo = $accounts->sum('balance');
 
-        return view('dompet', compact('transactions', 'pemasukan', 'pengeluaran', 'totalSaldo', 'accounts'));
+        // Nama bulan untuk ditampilkan di view (misal: "Februari")
+        $nama_bulan_ini = now()->translatedFormat('F');
+
+        return view('features.dompet.keuangan', compact('transactions', 'pemasukan', 'pengeluaran', 'totalSaldo', 'accounts', 'nama_bulan_ini'));
     }
 
     public function store(Request $request)
@@ -47,6 +54,7 @@ class TransactionController extends Controller
             'other_account' => 'required_if:account_type,Lainnya|string|max:255|nullable',
             'amount' => 'required|numeric|min:1',
             'transaction_date' => 'required|date',
+            'transaction_time' => 'nullable|date_format:H:i',
             'description' => 'nullable|string'
         ]);
 
@@ -69,13 +77,24 @@ class TransactionController extends Controller
         }
         $account->save();
 
+        $transactionDate = \Carbon\Carbon::parse($request->transaction_date);
+
+        if ($request->filled('transaction_time')) {
+            $timeString = $request->transaction_time;
+            // timeString format is typically "H:i", we parse it and set it
+            $transactionDate->setTimeFromTimeString($timeString);
+        } else {
+            // Jika kosong, gunakan waktu saat ini (Asia/Jakarta)
+            $transactionDate->setTimeFrom(now());
+        }
+
         Transaction::create([
             'user_id' => $user->id,
             'type' => $request->type,
             'category' => $category,
             'account_type' => $accountName,
             'amount' => $request->amount,
-            'transaction_date' => $request->transaction_date,
+            'transaction_date' => $transactionDate,
             'description' => $request->description,
         ]);
 
@@ -114,6 +133,6 @@ class TransactionController extends Controller
             ];
         }
 
-        return view('dompet-riwayat', compact('historyData'));
+        return view('features.dompet.riwayat', compact('historyData'));
     }
 }

@@ -13,8 +13,8 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dompet', [TransactionController::class, 'index'])->name('dompet.index');
-    Route::post('/dompet', [TransactionController::class, 'store'])->name('dompet.store');
+    Route::get('/dompet/keuangan', [TransactionController::class, 'index'])->name('dompet.index');
+    Route::post('/dompet/keuangan', [TransactionController::class, 'store'])->name('dompet.store');
     Route::get('/dompet/riwayat', [TransactionController::class, 'allHistory'])->name('dompet.riwayat');
 });
 

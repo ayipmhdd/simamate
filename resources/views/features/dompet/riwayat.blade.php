@@ -123,7 +123,9 @@
                                             <span
                                                 class="hidden sm:inline-block text-gray-300 dark:text-gray-600">•</span>
                                             <span
-                                                class="shrink-0">{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('d M h:i A') }}</span>
+                                                class="shrink-0">{{ $transaction->transaction_date->format('d M Y') }}
+                                                <span class="mx-1">•</span>
+                                                {{ $transaction->transaction_date->format('H:i') }}</span>
                                         </div>
                                     </div>
                                 </div>
