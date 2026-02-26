@@ -38,10 +38,15 @@ class TransactionController extends Controller
         $accounts = $user->accounts()->get();
         $totalSaldo = $accounts->sum('balance');
 
+        // Saldo Tabungan yang tersedia
+        $savings = \App\Models\Saving::where('user_id', $user->id)
+            ->where('current_amount', '>', 0)
+            ->get();
+
         // Nama bulan untuk ditampilkan di view (misal: "Februari")
         $nama_bulan_ini = now()->translatedFormat('F');
 
-        return view('features.dompet.keuangan', compact('transactions', 'pemasukan', 'pengeluaran', 'totalSaldo', 'accounts', 'nama_bulan_ini'));
+        return view('features.dompet.keuangan', compact('transactions', 'pemasukan', 'pengeluaran', 'totalSaldo', 'accounts', 'nama_bulan_ini', 'savings'));
     }
 
     public function store(Request $request)
@@ -52,6 +57,9 @@ class TransactionController extends Controller
             'other_category' => 'required_if:category,Lainnya|string|max:255|nullable',
             'account_type' => 'required|string|max:255',
             'other_account' => 'required_if:account_type,Lainnya|string|max:255|nullable',
+            'saving_id' => 'required_if:account_type,Tabungan|nullable|exists:savings,id',
+            'destination_account' => 'required_if:account_type,Tabungan|string|max:255|nullable',
+            'other_destination' => 'required_if:destination_account,Lainnya|string|max:255|nullable',
             'amount' => 'required|numeric|min:1',
             'transaction_date' => 'required|date',
             'transaction_time' => 'nullable|date_format:H:i',
@@ -63,6 +71,23 @@ class TransactionController extends Controller
 
         /** @var \App\Models\User $user */
         $user = Auth::user();
+
+        $description = $request->description;
+
+        // Jika sumber dana adalah Pencairan Tabungan
+        if ($accountName === 'Tabungan' && $request->type === 'pemasukan') {
+            $saving = \App\Models\Saving::where('id', $request->saving_id)->where('user_id', $user->id)->firstOrFail();
+
+            if ($request->amount > $saving->current_amount) {
+                return redirect()->back()->withErrors(['amount' => 'Saldo tabungan tidak mencukupi!']);
+            }
+
+            $saving->current_amount -= $request->amount;
+            $saving->save();
+
+            $accountName = $request->destination_account === 'Lainnya' ? $request->other_destination : $request->destination_account;
+            $description = empty($request->description) ? 'Pencairan Tabungan ' . $saving->item_name : $request->description;
+        }
 
         // Update Saldo Account
         $account = $user->accounts()->firstOrCreate(
@@ -95,7 +120,7 @@ class TransactionController extends Controller
             'account_type' => $accountName,
             'amount' => $request->amount,
             'transaction_date' => $transactionDate,
-            'description' => $request->description,
+            'description' => $description,
         ]);
 
         return redirect()->route('dompet.index')->with('success', 'Transaksi berhasil disimpan!');

@@ -10,7 +10,42 @@
         amount: '',
         category: '',
         accountType: '',
+        otherAccount: '',
+        description: '',
+        savingId: '',
+        destinationAccount: '',
+        otherDestination: '',
         transactionTime: '',
+        savingsList: {{ $savings->map(fn($s) => ['id' => $s->id, 'name' => $s->item_name, 'amount' => $s->current_amount])->toJson() }},
+        get maxSavingAmount() {
+            if (!this.savingId) return 0;
+            const saving = this.savingsList.find(s => s.id == this.savingId);
+            return saving ? parseFloat(saving.amount) : 0;
+        },
+        get isAmountExceeded() {
+            if (this.accountType === 'Tabungan' && this.savingId) {
+                return parseInt(this.amount || 0) > this.maxSavingAmount;
+            }
+            return false;
+        },
+        init() {
+            this.$watch('category', (val) => {
+                if (val === 'Tabungan') {
+                    this.accountType = 'Tabungan';
+                } else if (this.accountType === 'Tabungan') {
+                    this.accountType = '';
+                }
+            });
+    
+            const params = new URLSearchParams(window.location.search);
+            const locationParam = params.get('location');
+            if (locationParam) {
+                this.openModal('pengeluaran');
+                this.description = 'Pengeluaran di ' + locationParam;
+                // Bersihkan URL tanpa me-refresh halaman
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        },
         openModal(type) {
             this.transactionType = type;
             this.showModal = true;
@@ -18,6 +53,10 @@
             this.amount = '';
             this.category = '';
             this.accountType = '';
+            this.otherAccount = '';
+            this.savingId = '';
+            this.destinationAccount = '';
+            this.otherDestination = '';
             this.transactionTime = '';
         },
         setTimeNow() {
@@ -380,8 +419,13 @@
                                         (Rp)</label>
                                     <input type="text" id="amount_display" required x-model="amountFormatted"
                                         @input="formatRupiah" placeholder="Rp 0"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                        :class="{ 'border-red-500 text-red-900 focus:ring-red-500 focus:border-red-500': isAmountExceeded }"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white transition-colors">
                                     <input type="hidden" name="amount" x-model="amount">
+                                    <p x-show="isAmountExceeded" class="mt-2 text-sm text-red-600 dark:text-red-400">
+                                        Saldo tabungan tidak mencukupi (Maks: Rp <span
+                                            x-text="maxSavingAmount.toLocaleString('id-ID')"></span>)
+                                    </p>
                                 </div>
 
                                 <div>
@@ -390,6 +434,8 @@
                                     <select name="category" id="category" x-model="category" required
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
                                         <option value="" disabled selected>Pilih Kategori</option>
+                                        <option x-show="transactionType === 'pemasukan'" value="Tabungan">Tabungan
+                                            (Pencairan)</option>
                                         <option x-show="transactionType === 'pemasukan'" value="Gaji">Gaji</option>
                                         <option x-show="transactionType === 'pengeluaran'" value="Makan">Makan
                                         </option>
@@ -415,14 +461,21 @@
                                         class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sumber
                                         Dana</label>
                                     <select name="account_type" id="account_type" x-model="accountType" required
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                        :disabled="category === 'Tabungan'"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:bg-gray-100 dark:disabled:bg-gray-800 transition-colors">
                                         <option value="" disabled selected>Pilih Sumber Dana</option>
                                         <option value="Cash">Cash</option>
                                         <option value="Dana">Dana</option>
                                         <option value="SeaBank">SeaBank</option>
                                         <option value="GoPay">GoPay</option>
+                                        <option x-show="transactionType === 'pemasukan' || category === 'Tabungan'"
+                                            value="Tabungan">Tabungan
+                                            (Wishlist)</option>
                                         <option value="Lainnya">Lainnya</option>
                                     </select>
+                                    <template x-if="category === 'Tabungan'">
+                                        <input type="hidden" name="account_type" value="Tabungan">
+                                    </template>
                                 </div>
 
                                 <div x-show="accountType === 'Lainnya'" x-transition style="display: none;">
@@ -430,8 +483,57 @@
                                         class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sebutkan
                                         Sumber Dana Lainnya</label>
                                     <input type="text" name="other_account" id="other_account"
+                                        x-model="otherAccount" :required="accountType === 'Lainnya'"
                                         placeholder="Contoh: BCA, BNI, OVO, dll"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white">
+                                </div>
+
+                                <!-- Bagian Khusus Jika Pilih Pencairan Tabungan -->
+                                <div x-show="accountType === 'Tabungan'" x-transition
+                                    class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl space-y-4 border border-blue-100 dark:border-blue-800"
+                                    style="display: none;">
+                                    <div>
+                                        <label for="saving_id"
+                                            class="block text-sm font-medium text-blue-900 dark:text-blue-300">Pilih
+                                            Wishlist yang Ingin Dicairkan</label>
+                                        <select name="saving_id" id="saving_id" x-model="savingId"
+                                            :required="accountType === 'Tabungan'"
+                                            class="mt-1 block w-full rounded-md border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-blue-600 dark:text-white">
+                                            <option value="" disabled selected>Pilih Tabungan Wishlist</option>
+                                            <template x-for="saving in savingsList" :key="saving.id">
+                                                <option :value="saving.id"
+                                                    x-text="saving.name + ' (Rp ' + parseInt(saving.amount).toLocaleString('id-ID') + ')'">
+                                                </option>
+                                            </template>
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label for="destination_account"
+                                            class="block text-sm font-medium text-blue-900 dark:text-blue-300">Tujuan
+                                            Pencairan (Pindah ke mana?)</label>
+                                        <select name="destination_account" id="destination_account"
+                                            x-model="destinationAccount" :required="accountType === 'Tabungan'"
+                                            class="mt-1 block w-full rounded-md border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-blue-600 dark:text-white">
+                                            <option value="" disabled selected>Pilih Dompet Penerima</option>
+                                            <option value="Cash">Cash</option>
+                                            <option value="Dana">Dana</option>
+                                            <option value="SeaBank">SeaBank</option>
+                                            <option value="GoPay">GoPay</option>
+                                            <option value="Lainnya">Lainnya</option>
+                                        </select>
+                                    </div>
+
+                                    <div x-show="destinationAccount === 'Lainnya'" x-transition
+                                        style="display: none;">
+                                        <label for="other_destination"
+                                            class="block text-sm font-medium text-blue-900 dark:text-blue-300">Sebutkan
+                                            Dompet Tujuan</label>
+                                        <input type="text" name="other_destination" id="other_destination"
+                                            x-model="otherDestination" :required="destinationAccount === 'Lainnya'"
+                                            placeholder="Contoh: BCA Tunai"
+                                            class="mt-1 block w-full rounded-md border-blue-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-800 dark:border-blue-600 dark:text-white">
+                                    </div>
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -468,17 +570,21 @@
                                     <label for="description"
                                         class="block text-sm font-medium text-gray-700 dark:text-gray-300">Catatan
                                         Singkat (Opsional)</label>
-                                    <textarea name="description" id="description" rows="3"
+                                    <textarea name="description" id="description" rows="3" x-model="description"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm dark:bg-gray-900 dark:border-gray-600 dark:text-white"></textarea>
                                 </div>
                             </div>
                         </div>
                         <div
                             class="bg-gray-50 dark:bg-gray-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-2xl border-t border-gray-200 dark:border-gray-600">
-                            <button type="submit"
-                                :class="transactionType === 'pemasukan' ?
-                                    'bg-green-600 hover:bg-green-700 focus:ring-green-500' :
-                                    'bg-red-600 hover:bg-red-700 focus:ring-red-500'"
+                            <button type="submit" :disabled="isAmountExceeded"
+                                :class="{
+                                    'opacity-50 cursor-not-allowed': isAmountExceeded,
+                                    'bg-green-600 hover:bg-green-700 focus:ring-green-500': transactionType === 'pemasukan' &&
+                                        !isAmountExceeded,
+                                    'bg-red-600 hover:bg-red-700 focus:ring-red-500': transactionType === 'pengeluaran' &&
+                                        !isAmountExceeded
+                                }"
                                 class="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm transition-colors">
                                 Simpan
                             </button>
